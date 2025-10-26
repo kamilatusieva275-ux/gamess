@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Весёлые парочки - Игра для малышей!</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Nunito', cursive, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Анимированный фон */
+        .floating-animals {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .floating-animal {
+            position: absolute;
+            font-size: 2em;
+            opacity: 0.1;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); }
+            100% { transform: translateY(-100px) rotate(360deg); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: bounceIn 1s ease-out;
+        }
+
+        .title {
+            font-size: 3.5em;
+            color: white;
+            text-shadow: 3px 3px 0 #ff6b6b, 
+                         6px 6px 0 #4ecdc4,
+                         9px 9px 0 #45b7d1;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: white;
+            font-size: 1.5em;
+            opacity: 0.9;
+        }
+
+        /* Основной игровой контейнер */
+        .game-wrapper {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border: 8px solid #ffd166;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .info-item i {
+            font-size: 1.6em;
+        }
+
+        /* Игровое поле */
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .game-board {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-board {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Карточки */
+        .card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            border: 6px solid white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '?';
+            position: absolute;
+            font-size: 3em;
+            color: rgba(255,255,255,0.8);
+            font-weight: bold;
+        }
+
+        .card:hover {
+            transform: scale(1.05) rotate(2deg);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+
+        .card.flipped {
+            background: white;
+            transform: rotateY(180deg) scale(1.1);
+        }
+
+        .card.flipped::before {
+            display: none;
+        }
+
+        .card.matched {
+            background: linear-gradient(135deg, #a8ff78, #78ffd6);
+            border-color: #4caf50;
+            animation: happyDance 0.6s ease;
+            transform: scale(1.05);
+        }
+
+        .card.matched::after {
+            content: '✓';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #4caf50;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .card img {
+            width: 85%;
+            height: 85%;
+            object-fit: contain;
+            border-radius: 15px;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        .card.flipped img {
+            display: block;
+            animation: popIn 0.4s ease;
+        }
+
+        /* Кнопки */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #5d93ff, #7b68ee);
+            color: white;
+            border: none;
+            padding: 20px;
+            font-size: 1.3em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            font-family: inherit;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0) scale(1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffd166, #ffb347);
+        }
+
+        /* Анимации */
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes happyDance {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(5deg); }
+            50% { transform: scale(1.15) rotate(-5deg); }
+            75% { transform: scale(1.1) rotate(5deg); }
+        }
+
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* Поздравление */
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 1000;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .celebration.show {
+            display: flex;
+        }
+
+        .celebration-content {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 50px;
+            border-radius: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            border: 10px solid #ffd166;
+        }
+
+        .celebration h2 {
+            font-size: 4em;
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 0 #ff6b6b;
+            animation: bounceIn 1s infinite;
+        }
+
+        .celebration p {
+            font-size: 2em;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        /* Конфетти */
+        .confetti {
+            position: fixed;
+            width: 15px;
+            height: 15px;
+            background: #ff6b6b;
+            animation: confetti 3s linear forwards;
+            z-index: 1001;
+        }
+
+        .confetti:nth-child(2n) { background: #4ecdc4; }
+        .confetti:nth-child(3n) { background: #ffd166; }
+        .confetti:nth-child(4n) { background: #5d93ff; }
+        .confetti:nth-child(5n) { background: #ff8e8e; }
+
+        /* Прогресс бар */
+        .progress-container {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #44a08d);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Анимированный фон -->
+    <div class="floating-animals">
+        <div class="floating-animal">🐶</div>
+        <div class="floating-animal">🐱</div>
+        <div class="floating-animal">🐰</div>
+        <div class="floating-animal">🐻</div>
+        <div class="floating-animal">🐵</div>
+        <div class="floating-animal">🦊</div>
+        <div class="floating-animal">🐷</div>
+        <div class="floating-animal">🐸</div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Весёлые парочки! 🎮</h1>
+            <p class="subtitle">Найди одинаковые картинки, малыш! 👶</p>
+        </div>
+
+        <div class="game-wrapper">
+            <div class="game-info">
+                <div class="info-item">
+                    <i class="fas fa-star" style="color: #ffd166;"></i>
+                    <span>Найдено: <span id="pairsFound">0</span> пар</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-trophy" style="color: #ff6b6b;"></i>
+                    <span>Уровень: <span id="currentLevel">1</span></span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-heart" style="color: #ff6b6b;"></i>
+                    <span>Попытки: <span id="attemptsCount">0</span></span>
+                </div>
+            </div>
+
+            <!-- Прогресс бар -->
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div class="game-board" id="gameBoard">
+                <!-- Карточки будут генерироваться JavaScript -->
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="startGame()">
+                    <i class="fas fa-redo"></i> Новая игра
+                </button>
+                <button class="btn btn-success" onclick="changeLevel()">
+                    <i class="fas fa-sliders-h"></i> Уровень сложности
+                </button>
+                <button class="btn btn-warning" onclick="showInstructions()">
+                    <i class="fas fa-question-circle"></i> Как играть?
+                </button>
+                <button class="btn" onclick="toggleSound()">
+                    <i class="fas fa-volume-up" id="soundIcon"></i> Звук
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно поздравления -->
+    <div class="celebration" id="celebration">
+        <div class="celebration-content">
+            <h2>🎉 УРА! 🎉</h2>
+            <p>Ты нашёл все пары!</p>
+            <p>Ты настоящий чемпион! 🏆</p>
+            <button class="btn btn-primary" onclick="hideCelebration()" style="margin-top: 20px;">
+                <i class="fas fa-play"></i> Играть ещё!
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Улучшенная база данных с детскими картинками
+        const imageSets = {
+            easy: [
+                { 
+                    name: "щенок", 
+                    url: "https://images.unsplash.com/photo-1558322457-6b8a41e6d0b8?w=300&h=300&fit=crop&auto=format",
+                    sound: "woof"
+                },
+                { 
+                    name: "котенок", 
+                    url: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=300&h=300&fit=crop&auto=format",
+                    sound: "meow"
+                },
+                { 
+                    name: "кролик", 
+                    url: "https://images.unsplash.com/photo-1556838803-cc94986cb631?w=300&h=300&fit=crop&auto=format",
+                    sound: "hop"
+                },
+                { 
+                    name: "цыпленок", 
+                    url: "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=300&h=300&fit=crop&auto=format",
+                    sound: "chirp"
+                }
+            ],
+            medium: [
+                { 
+                    name: "машинка", 
+                    url: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=300&h=300&fit=crop&auto=format",
+                    sound: "vroom"
+                },
+                { 
+                    name: "мячик", 
+                    url: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=300&fit=crop&auto=format",
+                    sound: "bounce"
+                },
+                { 
+                    name: "кубики", 
+                    url: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=300&h=300&fit=crop&auto=format",
+                    sound: "stack"
+                },
+                { 
+                    name: "мишка", 
+                    url: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=300&h=300&fit=crop&auto=format",
+                    sound: "hug"
+                },
+                { 
+                    name: "кукла", 
+                    url: "https://images.unsplash.com/photo-1589878615941-b0c92d4e56c9?w=300&h=300&fit=crop&auto=format",
+                    sound: "play"
+                }
+            ],
+            hard: [
+                { 
+                    name: "яблоко", 
+                    url: "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=300&h=300&fit=crop&auto=format",
+                    sound: "crunch"
+                },
+                { 
+                    name: "банан", 
+                    url: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300&h=300&fit=crop&auto=format",
+                    sound: "peel"
+                },
+                { 
+                    name: "клубника", 
+                    url: "https://images.unsplash.com/photo-1464454709131-ffd692591ee5?w=300&h=300&fit=crop&auto=format",
+                    sound: "yum"
+                },
+                { 
+                    name: "морковка", 
+                    url: "https://images.unsplash.com/photo-1445282768818-728615cc910a?w=300&h=300&fit=crop&auto=format",
+                    sound: "crunch"
+                },
+                { 
+                    name: "помидор", 
+                    url: "https://images.unsplash.com/photo-1561136594-7f68413baa99?w=300&h=300&fit=crop&auto=format",
+                    sound: "squish"
+                },
+                { 
+                    name: "печенье", 
+                    url: "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=300&h=300&fit=crop&auto=format",
+                    sound: "nom"
+                }
+            ]
+        };
+
+        let currentLevel = 'easy';
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let totalPairs = 0;
+        let soundEnabled = true;
+        let attempts = 0;
+
+        // Инициализация игры
+        function init() {
+            createFloatingAnimals();
+            startGame();
+        }
+
+        function createFloatingAnimals() {
+            const container = document.querySelector('.floating-animals');
+            const animals = ['🐶', '🐱', '🐰', '🐻', '🐵', '🦊', '🐷', '🐸', '🐙', '🦄'];
+            
+            for (let i = 0; i < 15; i++) {
+                const animal = document.createElement('div');
+                animal.className = 'floating-animal';
+                animal.textContent = animals[Math.floor(Math.random() * animals.length)];
+                animal.style.left = Math.random() * 100 + 'vw';
+                animal.style.animationDelay = Math.random() * 15 + 's';
+                animal.style.fontSize = (Math.random() * 2 + 1.5) + 'em';
+                container.appendChild(animal);
+            }
+        }
+
+        function startGame() {
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.innerHTML = '';
+            flippedCards = [];
+            matchedPairs = 0;
+            attempts = 0;
+            
+            document.getElementById('pairsFound').textContent = '0';
+            document.getElementById('attemptsCount').textContent = '0';
+            document.getElementById('progressBar').style.width = '0%';
+
+            const currentSet = imageSets[currentLevel];
+            totalPairs = currentSet.length;
+
+            // Создаем пары карточек
+            cards = [];
+            currentSet.forEach((image, index) => {
+                cards.push({ ...image, id: index * 2 });
+                cards.push({ ...image, id: index * 2 + 1 });
+            });
+
+            // Перемешиваем карточки
+            cards = cards.sort(() => Math.random() - 0.5);
+
+            // Создаем HTML для карточек
+            cards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.innerHTML = `
+                    <img src="${card.url}" alt="${card.name}" loading="lazy">
+                `;
+                cardElement.addEventListener('click', () => flipCard(cardElement, card));
+                gameBoard.appendChild(cardElement);
+            });
+
+            hideCelebration();
+        }
+
+        function flipCard(cardElement, card) {
+            if (flippedCards.length >= 2 || cardElement.classList.contains('flipped') || cardElement.classList.contains('matched')) {
+                return;
+            }
+
+            cardElement.classList.add('flipped');
+            flippedCards.push({ element: cardElement, card });
+
+            if (flippedCards.length === 2) {
+                attempts++;
+                document.getElementById('attemptsCount').textContent = attempts;
+                checkForMatch();
+            }
+
+            if (soundEnabled) {
+                playSound('flip');
+            }
+        }
+
+        function checkForMatch() {
+            const [card1, card2] = flippedCards;
+
+            if (card1.card.name === card2.card.name) {
+                setTimeout(() => {
+                    card1.element.classList.add('matched');
+                    card2.element.classList.add('matched');
+                    flippedCards = [];
+                    matchedPairs++;
+                    
+                    document.getElementById('pairsFound').textContent = matchedPairs;
+                    updateProgress();
+                    
+                    if (soundEnabled) {
+                        playSound(card1.card.sound);
+                        playSound('match');
+                    }
+
+                    if (matchedPairs === totalPairs) {
+                        setTimeout(showCelebration, 800);
+                    }
+                }, 500);
+            } else {
+                setTimeout(() => {
+                    card1.element.classList.remove('flipped');
+                    card2.element.classList.remove('flipped');
+                    flippedCards = [];
+                }, 1000);
+            }
+        }
+
+        function updateProgress() {
+            const progress = (matchedPairs / totalPairs) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function changeLevel() {
+            const levels = ['easy', 'medium', 'hard'];
+            const currentIndex = levels.indexOf(currentLevel);
+            currentLevel = levels[(currentIndex + 1) % levels.length];
+            
+            const levelNames = { easy: '1', medium: '2', hard: '3' };
+            document.getElementById('currentLevel').textContent = levelNames[currentLevel];
+            
+            startGame();
+        }
+
+        function showCelebration() {
+            const celebration = document.getElementById('celebration');
+            celebration.classList.add('show');
+            createConfetti();
+            
+            if (soundEnabled) {
+                playSound('win');
+            }
+        }
+
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#4ecdc4', '#ffd166', '#5d93ff', '#ff8e8e'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => confetti.remove(), 3000);
+            }
+        }
+
+        function hideCelebration() {
+            const celebration = document.getElementById('celebration');
+            celebration.classList.remove('show');
+            startGame();
+        }
+
+        function showInstructions() {
+            alert('🎮 КАК ИГРАТЬ:\n\n👆 Нажимай на карточки, чтобы перевернуть их\n🔍 Ищи две одинаковые картинки\n🎉 Когда найдешь все пары - победа!\n⭐ Молодец! Ты самый умный малыш!');
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            icon.className = soundEnabled ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+        }
+
+        function playSound(type) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            if (type === 'flip') {
+                // Звук переворота карточки
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } else if (type === 'match') {
+                // Звук совпадения
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.setValueAtTime(1200, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } else if (type === 'win') {
+                // Победная мелодия
+                const notes = [523, 659, 784, 1047, 1319];
+                let time = audioContext.currentTime;
+                
+                notes.forEach((freq, index) => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    osc.frequency.setValueAtTime(freq, time);
+                    gain.gain.setValueAtTime(0.1, time);
+                    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+                    osc.start(time);
+                    osc.stop(time + 0.3);
+                    time += 0.15;
+                });
+            } else {
+                // Звуки животных и предметов
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                let freq = 500;
+                let duration = 0.3;
+                
+                switch(type) {
+                    case 'woof': freq = 200; duration = 0.2; break;
+                    case 'meow': freq = 800; duration = 0.4; break;
+                    case 'chirp': freq = 1200; duration = 0.1; break;
+                    case 'vroom': freq = 100; duration = 0.5; break;
+                }
+                
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + duration);
+            }
+        }
+
+        // Запускаем игру при загрузке
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
